@@ -14,7 +14,8 @@ async def main(config: Config):
 
     autojoin = config.channels.copy()
     for i in range(config.banchan_count):
-        autojoin.append(f"{config.banchan_prefix}{i}")
+        num = str(i).zfill(2)
+        autojoin.append(f"{config.banchan_prefix}{num}")
 
     params = ConnectionParams(
         config.nickname,
