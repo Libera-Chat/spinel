@@ -119,8 +119,6 @@ class Server(BaseServer):
             mask = f"$a:{remove_account}"
             # remove ban
             await self.send(build("MODE", [chan, "-b", mask]))
-            # wait until server has acked unban
-            await self.wait_for(Response("MODE", [chan, "-b", mask]))
 
             # update channel ban count
             channels[chan] -= 1
