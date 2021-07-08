@@ -37,10 +37,6 @@ class Server(BaseServer):
         super().__init__(bot, name)
         self._config   = config
 
-        self.links_up:     Dict[str, str] = {}
-        self.links_down:   Dict[str, List[str]] = {}
-        self.server_users: Dict[str, int] = {}
-
     def set_throttle(self, rate: int, time: float):
         # turn off throttling
         pass
