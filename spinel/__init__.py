@@ -153,7 +153,7 @@ class Server(BaseServer):
             bc_accounts[add_account] = chan
             # don't add more bans to this channel if its bans are full
             if channels[chan] == self._config.banchan_max:
-                channels.move_to_end(last=True)
+                channels.move_to_end(chan, last=True)
 
         self.group_contacts   = ps_accounts
         self.banchan_accounts = bc_accounts
