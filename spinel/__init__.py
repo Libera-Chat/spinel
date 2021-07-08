@@ -186,8 +186,6 @@ class Server(BaseServer):
 
     async def line_read(self, line: Line):
         if line.command == RPL_WELCOME:
-            # snomask:
-            # s - netsplits, klines
             await self.send(build("MODE", [self.nickname, "+g"]))
             oper_name, oper_file, oper_pass = self._config.oper
             await self._oper_up(oper_name, oper_file, oper_pass)
