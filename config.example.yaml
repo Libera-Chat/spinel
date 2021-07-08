@@ -1,0 +1,18 @@
+server: irc.libera.chat:+6697
+nickname: spinel
+password: spinel:hunter2
+channels:
+  - "#services"
+
+banchan-prefix: "#spinel-"
+banchan-count: 10
+banchan-max: 500
+
+sasl:
+  username: spinel
+  password: hunter3
+
+oper:
+  name: spinel
+  file: ~/oper.key
+  pass: hunter4
