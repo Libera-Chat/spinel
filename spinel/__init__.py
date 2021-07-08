@@ -199,7 +199,7 @@ class Server(BaseServer):
             chan_name = self.casefold(line.params[1])
             if chan_name.startswith(self._config.banchan_prefix):
                 self.banchan_counts[chan_name] = 0
-                if len(self.banchan_counts) == 3:
+                if len(self.banchan_counts) == self._config.banchan_count:
                     # we've got ban lists for all our ban channels
                     await self._init_invex()
 
