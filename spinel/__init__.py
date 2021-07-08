@@ -82,8 +82,9 @@ class Server(BaseServer):
             ) -> Dict[str, str]:
 
         accounts: Dict[str, str] = {}
+        bc_prefix = self.casefold(self._config.banchan_prefix)
         for chan_name in self.channels.keys():
-            if chan_name.startswith(self._config.banchan_prefix):
+            if chan_name.startswith(bc_prefix):
                 chan = self.channels[chan_name]
                 for ban in chan.list_modes["b"]:
                     if ban.startswith("$a:"):
@@ -101,8 +102,9 @@ class Server(BaseServer):
 
         # get all our ban channels
         channel_sort: List[Tuple[str, int]] = []
+        bc_prefix = self.casefold(self._config.banchan_prefix)
         for chan_name in sorted(self.channels.keys()):
-            if chan_name.startswith(self._config.banchan_prefix):
+            if chan_name.startswith(bc_prefix):
                 ban_count = len(self.channels[chan_name].list_modes["b"])
                 channel_sort.append((chan_name, ban_count))
         # sort by who's got the most bans set
@@ -195,7 +197,8 @@ class Server(BaseServer):
 
         elif line.command == RPL_ENDOFBANLIST:
             chan_name = self.casefold(line.params[1])
-            if chan_name.startswith(self._config.banchan_prefix):
+            bc_prefix = self.casefold(self._config.banchan_prefix)
+            if chan_name.startswith(bc_prefix):
                 self.banchan_counts[chan_name] = 0
                 if len(self.banchan_counts) == self._config.banchan_count:
                     # we've got ban lists for all our ban channels
