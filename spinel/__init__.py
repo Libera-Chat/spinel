@@ -134,7 +134,7 @@ class Server(BaseServer):
 
         # get rid of channels still at max ban count
         for chan, count in list(channels.items()):
-            if count == self._config.banchan_max:
+            if count >= self._config.banchan_max:
                 # we're always looking at the first item
                 # either we popped everything before this or this is the
                 # first loop
@@ -152,7 +152,7 @@ class Server(BaseServer):
             channels[chan] += 1
             bc_accounts[add_account] = chan
             # don't add more bans to this channel if its bans are full
-            if channels[chan] == self._config.banchan_max:
+            if channels[chan] >= self._config.banchan_max:
                 channels.move_to_end(chan, last=True)
 
         self.group_contacts   = ps_accounts
@@ -237,7 +237,7 @@ class Server(BaseServer):
 
                     self.banchan_counts[chan] += 1
                     self.banchan_accounts[gc] = chan
-                    if self.banchan_counts[chan] == self._config.banchan_max:
+                    if self.banchan_counts[chan] >= self._config.banchan_max:
                         self.banchan_counts.move_to_end(chan, last=True)
                 else:
                     self.group_contacts[gc] += 1
