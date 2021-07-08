@@ -5,7 +5,6 @@ from typing      import Dict, List, Optional, Set, Tuple
 from irctokens import build, Line
 from ircrobots import Bot as BaseBot
 from ircrobots import Server as BaseServer
-from ircrobots import ConnectionParams
 
 from ircchallenge import Challenge
 from ircstates.numerics import *
