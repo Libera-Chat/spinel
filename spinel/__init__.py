@@ -15,8 +15,8 @@ from ircrobots.formatting import strip as format_strip
 from .config import Config
 
 RE_NSACCOUNTNAME = re.compile(r"^NickServ (?P<old1>\S+)(?: .(?P<old2>\S+).)? SET:ACCOUNTNAME: (?P<new>\S+)$")
-RE_PSCONTACTADD  = re.compile(r"^ProjectServ \S+( \(\S+\))? PROJECT:CONTACT:ADD: (?P<gc>\S+) ")
-RE_PSCONTACTDEL  = re.compile(r"^ProjectServ \S+( \(\S+\))? PROJECT:CONTACT:DEL: (?P<gc>\S+) ")
+RE_PSCONTACTADD  = re.compile(r"^ProjectServ \S+(?: \(\S+)? PROJECT:CONTACT:ADD: (?P<gc>\S+) ")
+RE_PSCONTACTDEL  = re.compile(r"^ProjectServ \S+(?: \(\S+)? PROJECT:CONTACT:DEL: (?P<gc>\S+) ")
 
 # not in ircstates yet...
 RPL_RSACHALLENGE2      = "740"
