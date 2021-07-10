@@ -244,13 +244,18 @@ class Server(BaseServer):
                 old  = self.casefold(old2 or old1)
                 new  = self.casefold(m_nsaccountname.group("new"))
 
+                # is this a GC account?
                 if old in self.banchan_accounts:
+                    # get all their projects
+                    # update GC name
                     projs = self.group_contacts.pop(old)
                     self.group_contacts[new] = projs
+                    # update GC name for all their projects
                     for proj in projs:
                         self.projects[proj].remove(old)
                         self.projects[proj].add(new)
 
+                    # update their GC ban to new account name
                     chan = self.banchan_accounts.pop(old)
                     self.banchan_accounts[new] = chan
                     await self.send(build(
@@ -261,49 +266,67 @@ class Server(BaseServer):
                 proj = m_pscontactadd.group("proj")
                 gc   = self.casefold(m_pscontactadd.group("gc"))
 
+                # update this project's group contacts
                 if not proj in self.projects:
                     self.projects[proj] = {gc}
                 else:
                     self.projects[proj].add(gc)
 
+                # newly a GC?
                 if not gc in self.group_contacts:
+                    # remember this GC is on this project
                     self.group_contacts[gc] = {proj}
+                    # give them a ban
                     chan = list(self.banchan_counts)[0]
                     await self.send(build("MODE", [chan, "+b", f"$a:{gc}"]))
 
+                    # remember where we banned them
                     self.banchan_counts[chan] += 1
                     self.banchan_accounts[gc] = chan
+                    # is the ban channel we just used now full?
                     if self.banchan_counts[chan] >= self._config.banchan_max:
                         self.banchan_counts.move_to_end(chan, last=True)
                 else:
+                    # remember this GC is on this project
                     self.group_contacts[gc].add(proj)
 
             elif m_pscontactdel is not None:
                 proj = m_pscontactdel.group("proj")
                 gc   = self.casefold(m_pscontactdel.group("gc"))
 
+                # remove GC from project
                 self.projects[proj].remove(gc)
                 if not self.projects[proj]:
+                    # no more GCs on project? remove it
                     del self.projects[proj]
 
+                # remove project from GC
                 self.group_contacts[gc].remove(proj)
+                # no more projects for GC?
                 if not self.group_contacts[gc]:
+                    # remove GC ban
                     chan = self.banchan_accounts.pop(gc)
                     await self.send(build("MODE", [chan, "-b", f"$a:{gc}"]))
                     del self.group_contacts[gc]
+                    # this ban channel now has space, use it first
                     self.banchan_counts[chan] -= 1
                     self.banchan_counts.move_to_end(chan, last=False)
 
             elif m_psprojectdrop is not None:
                 proj = m_psprojectdrop.group("proj")
+                # get all GCs for project
                 for gc in self.projects.pop(proj):
+                    # remove project from GC
                     self.group_contacts[gc].remove(proj)
+                    # no more projects for GC?
                     if not self.group_contacts[gc]:
+                        # remove GC ban
                         del self.group_contacts[gc]
                         chan = self.banchan_accounts.pop(gc)
                         await self.send(build(
                             "MODE", [chan, "-b", f"$a:{gc}"]
                         ))
+                        # this ban channel now has space. use it first
                         self.banchan_counts[chan] -= 1
                         self.banchan_counts.move_to_end(chan, last=False)
 
