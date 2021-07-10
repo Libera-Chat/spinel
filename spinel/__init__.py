@@ -14,10 +14,20 @@ from ircrobots.formatting import strip as format_strip
 
 from .config import Config
 
+# <@NickServ> sandcat SET:ACCOUNTNAME: sandcat-1
+# <@NickServ> sandcat_ (sandcat) SET:ACCOUNTNAME: sandcat-1
 RE_NSACCOUNTNAME = re.compile(r"^NickServ (?P<old1>\S+)(?: .(?P<old2>\S+).)? SET:ACCOUNTNAME: (?P<new>\S+)$")
+# <@ProjectServ> jess PROJECT:CONTACT:ADD: sandcat to jesstest (primary, private)
+# <@ProjectServ> jess_ (jess) PROJECT:CONTACT:ADD: sandcat to jesstest (primary, private)
 RE_PSCONTACTADD  = re.compile(r"^ProjectServ \S+(?: \S+)? PROJECT:CONTACT:ADD: (?P<gc>\S+) to (?P<proj>\S+) ")
-RE_PSCONTACTDEL  = re.compile(r"^ProjectServ \S+(?: \S+)? PROJECT:CONTACT:DEL: (?P<gc>\S+) from (?P<proj>\S+)$")
+# <@ProjectServ> jess PROJECT:CONTACT:DEL: sandcat from jesstest
+# <@ProjectServ> jess_ (jess) PROJECT:CONTACT:DEL: sandcat from jesstest
+# <@OperServ> PROJECT:CONTACT:LOST: sandcat from jesstest
+RE_PSCONTACTDEL  = re.compile(r"^\S+Serv (?:\S+(?: \S+)? )?PROJECT:CONTACT:(?:DEL|LOST): (?P<gc>\S+) from (?P<proj>\S+)$")
+# <@ProjectServ> jess PROJECT:DROP: jesstest
+# <@ProjectServ> jess_ (jess) PROJECT:DROP: jesstest
 RE_PSPROJECTDROP = re.compile(r"^ProjectServ \S+(?: \S+)? PROJECT:DROP: (?P<proj>\S+)$")
+# -ProjectServ- - jesstest (#jesstest; jess, sandcat)
 RE_PSLIST        = re.compile(r"^- (?P<proj>\S+) \([^;]+; (?P<gcs>.*)\)$")
 
 # not in ircstates yet...
