@@ -15,8 +15,10 @@ from ircrobots.formatting import strip as format_strip
 from .config import Config
 
 RE_NSACCOUNTNAME = re.compile(r"^NickServ (?P<old1>\S+)(?: .(?P<old2>\S+).)? SET:ACCOUNTNAME: (?P<new>\S+)$")
-RE_PSCONTACTADD  = re.compile(r"^ProjectServ \S+(?: \(\S+)? PROJECT:CONTACT:ADD: (?P<gc>\S+) ")
-RE_PSCONTACTDEL  = re.compile(r"^ProjectServ \S+(?: \(\S+)? PROJECT:CONTACT:DEL: (?P<gc>\S+) ")
+RE_PSCONTACTADD  = re.compile(r"^ProjectServ \S+(?: \S+)? PROJECT:CONTACT:ADD: (?P<gc>\S+) to (?P<proj>\S+) ")
+RE_PSCONTACTDEL  = re.compile(r"^ProjectServ \S+(?: \S+)? PROJECT:CONTACT:DEL: (?P<gc>\S+) from (?P<proj>\S+)$")
+RE_PSPROJECTDROP = re.compile(r"^ProjectServ \S+(?: \S+)? PROJECT:DROP: (?P<proj>\S+)$")
+RE_PSLIST        = re.compile(r"^- (?P<proj>\S+) \([^;]+; (?P<gcs>.*)\)$")
 
 # not in ircstates yet...
 RPL_RSACHALLENGE2      = "740"
@@ -24,7 +26,8 @@ RPL_ENDOFRSACHALLENGE2 = "741"
 RPL_YOUREOPER          = "381"
 
 class Server(BaseServer):
-    group_contacts:   Dict[str, int] = {}
+    projects:         Dict[str, Set[str]] = {}
+    group_contacts:   Dict[str, Set[str]] = {}
     banchan_accounts: Dict[str, str] = {}
     banchan_counts:   Dict[str, int] = {}
 
@@ -42,7 +45,7 @@ class Server(BaseServer):
 
 
     async def _get_group_contacts(self
-            ) -> Dict[str, int]:
+            ) -> Dict[str, Set[str]]:
         await self.send(build("PRIVMSG", ["ProjectServ", "LIST *"]))
 
         ps = Nick("ProjectServ")
@@ -53,22 +56,24 @@ class Server(BaseServer):
             "NOTICE", [SELF, Formatless(Regex(r"^\d+ matches "))], source=ps
         )
 
-        gcs: Dict[str, int] = {}
+        gcs: Dict[str, Set[str]] = {}
         while True:
             line = await self.wait_for({
                 ps_list_line, ps_list_end
             })
-            text = self.casefold(format_strip(line.params[1]))
+            text  = self.casefold(format_strip(line.params[1]))
+            match = RE_PSLIST.search(text)
 
-            if text.startswith("- "):
-                pgcs = text.split("; ", 1)[1][:-1].split(", ")
+            if match is not None:
+                proj = match.group("proj")
+                pgcs = match.group("gcs").split(", ")
                 for gc in pgcs:
                     if gc == "no contacts":
                         continue
                     elif not gc in gcs:
-                        gcs[gc] = 1
+                        gcs[gc] = {proj}
                     else:
-                        gcs[gc] += 1
+                        gcs[gc].add(proj)
             else:
                 break
         return gcs
@@ -152,6 +157,14 @@ class Server(BaseServer):
         self.banchan_accounts = bc_accounts
         self.banchan_counts   = channels
 
+        self.projects.clear()
+        for gc, projects in ps_accounts.items():
+            for project in projects:
+                if not project in self.projects:
+                    self.projects[project] = {gc}
+                else:
+                    self.projects[project].add(gc)
+
     async def _oper_up(self,
             oper_name: str,
             oper_file: str,
@@ -207,6 +220,7 @@ class Server(BaseServer):
             m_nsaccountname = RE_NSACCOUNTNAME.search(reference)
             m_pscontactadd  = RE_PSCONTACTADD.search(reference)
             m_pscontactdel  = RE_PSCONTACTDEL.search(reference)
+            m_psprojectdrop = RE_PSPROJECTDROP.search(reference)
 
             if m_nsaccountname is not None:
                 old1 = m_nsaccountname.group("old1")
@@ -222,9 +236,16 @@ class Server(BaseServer):
                     ))
 
             elif m_pscontactadd is not None:
-                gc = self.casefold(m_pscontactadd.group("gc"))
+                proj = m_pscontactadd.group("proj")
+                gc   = self.casefold(m_pscontactadd.group("gc"))
+
+                if not proj in self.projects:
+                    self.projects[proj] = {gc}
+                else:
+                    self.projects[proj].add(gc)
+
                 if not gc in self.group_contacts:
-                    self.group_contacts[gc] = 1
+                    self.group_contacts[gc] = {proj}
                     chan = list(self.banchan_counts)[0]
                     await self.send(build("MODE", [chan, "+b", f"$a:{gc}"]))
 
@@ -233,19 +254,36 @@ class Server(BaseServer):
                     if self.banchan_counts[chan] >= self._config.banchan_max:
                         self.banchan_counts.move_to_end(chan, last=True)
                 else:
-                    self.group_contacts[gc] += 1
+                    self.group_contacts[gc].add(proj)
 
             elif m_pscontactdel is not None:
+                proj = m_pscontactdel.group("proj")
                 gc   = self.casefold(m_pscontactdel.group("gc"))
-                chan = self.banchan_accounts[gc]
 
-                self.group_contacts[gc] -= 1
+                self.projects[proj].remove(gc)
+                if not self.projects[proj]:
+                    del self.projects[proj]
+
+                self.group_contacts[gc].remove(proj)
                 if not self.group_contacts[gc]:
+                    chan = self.banchan_accounts.pop(gc)
                     await self.send(build("MODE", [chan, "-b", f"$a:{gc}"]))
                     del self.group_contacts[gc]
-                    del self.banchan_accounts[gc]
                     self.banchan_counts[chan] -= 1
                     self.banchan_counts.move_to_end(chan, last=False)
+
+            elif m_psprojectdrop is not None:
+                proj = m_psprojectdrop.group("proj")
+                for gc in self.projects.pop(proj):
+                    self.group_contacts[gc].remove(proj)
+                    if not self.group_contacts[gc]:
+                        del self.group_contacts[gc]
+                        chan = self.banchan_accounts.pop(gc)
+                        await self.send(build(
+                            "MODE", [chan, "-b", f"$a:{gc}"]
+                        ))
+                        self.banchan_counts[chan] -= 1
+                        self.banchan_counts.move_to_end(chan, last=False)
 
     def line_preread(self, line: Line):
         print(f"< {line.format()}")
