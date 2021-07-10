@@ -229,6 +229,12 @@ class Server(BaseServer):
                 new  = self.casefold(m_nsaccountname.group("new"))
 
                 if old in self.banchan_accounts:
+                    projs = self.group_contacts.pop(old)
+                    self.group_contacts[new] = projs
+                    for proj in projs:
+                        self.projects[proj].remove(old)
+                        self.projects[proj].add(new)
+
                     chan = self.banchan_accounts.pop(old)
                     self.banchan_accounts[new] = chan
                     await self.send(build(
