@@ -36,9 +36,15 @@ RPL_ENDOFRSACHALLENGE2 = "741"
 RPL_YOUREOPER          = "381"
 
 class Server(BaseServer):
+    # holds project:{gc1,gc2}
     projects:         Dict[str, Set[str]] = {}
+    # holds gc:{project1,project2}
     group_contacts:   Dict[str, Set[str]] = {}
+    # holds gc:chan
+    # where `chan` is the channel holding the GC's ban
     banchan_accounts: Dict[str, str] = {}
+    # holds chan:count
+    # where `count` is how many bans the channel currently has
     banchan_counts:   Dict[str, int] = {}
 
     def __init__(self,
