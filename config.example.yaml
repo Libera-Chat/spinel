@@ -3,6 +3,7 @@ nickname: spinel
 password: spinel:hunter2
 channels:
   - "#services"
+log: "NOTICE #services :{message}"
 
 banchan-prefix: "#spinel-"
 banchan-count: 10

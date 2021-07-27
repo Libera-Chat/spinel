@@ -208,6 +208,9 @@ class Server(BaseServer):
                     await self.send(build("CHALLENGE", [f"+{retort}"]))
                     break
 
+    async def _log(self, message: str):
+        await self.send_raw(self._config.log.format(message=message))
+
     async def line_read(self, line: Line):
         if line.command == RPL_WELCOME:
             await self.send(build("MODE", [self.nickname, "+g"]))
@@ -261,6 +264,7 @@ class Server(BaseServer):
                     await self.send(build(
                         "MODE", [chan, "-b+b", f"$a:{old}", f"$a:{new}"]
                     ))
+                    await self._log(f"renaming invex for {old} -> {new}")
 
             elif m_pscontactadd is not None:
                 proj = m_pscontactadd.group("proj")
@@ -286,6 +290,8 @@ class Server(BaseServer):
                     # is the ban channel we just used now full?
                     if self.banchan_counts[chan] >= self._config.banchan_max:
                         self.banchan_counts.move_to_end(chan, last=True)
+
+                    await self._log(f"adding invex for new GC {gc}")
                 else:
                     # remember this GC is on this project
                     self.group_contacts[gc].add(proj)
@@ -312,6 +318,8 @@ class Server(BaseServer):
                     self.banchan_counts[chan] -= 1
                     self.banchan_counts.move_to_end(chan, last=False)
 
+                    await self._log(f"removing invex for no-longer-GC {gc}")
+
             elif m_psprojectdrop is not None:
                 proj = m_psprojectdrop.group("proj")
                 # get all GCs for project
@@ -329,6 +337,9 @@ class Server(BaseServer):
                         # this ban channel now has space. use it first
                         self.banchan_counts[chan] -= 1
                         self.banchan_counts.move_to_end(chan, last=False)
+                        await self._log(
+                            f"removing invex for no-longer-GC {gc}"
+                        )
 
     def line_preread(self, line: Line):
         print(f"< {line.format()}")

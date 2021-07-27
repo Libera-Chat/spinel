@@ -20,6 +20,8 @@ class Config(object):
     banchan_count:  int
     banchan_max:    int
 
+    log: str
+
 def load(filepath: str):
     with open(filepath) as file:
         config_yaml = yaml.safe_load(file.read())
@@ -50,5 +52,6 @@ def load(filepath: str):
         (oper_name, oper_file, oper_pass),
         config_yaml["banchan-prefix"],
         config_yaml["banchan-count"],
-        config_yaml["banchan-max"]
+        config_yaml["banchan-max"],
+        config_yaml["log"]
     )
