@@ -323,7 +323,7 @@ class Server(BaseServer):
             elif m_psprojectdrop is not None:
                 proj = m_psprojectdrop.group("proj")
                 # get all GCs for project
-                for gc in self.projects.pop(proj):
+                for gc in self.projects.pop(proj, []):
                     # remove project from GC
                     self.group_contacts[gc].remove(proj)
                     # no more projects for GC?
