@@ -267,7 +267,7 @@ class Server(BaseServer):
                     await self._log(f"renaming invex for {old} -> {new}")
 
             elif m_pscontactadd is not None:
-                proj = m_pscontactadd.group("proj")
+                proj = self.casefold(m_pscontactadd.group("proj"))
                 gc   = self.casefold(m_pscontactadd.group("gc"))
 
                 # update this project's group contacts
@@ -297,7 +297,7 @@ class Server(BaseServer):
                     self.group_contacts[gc].add(proj)
 
             elif m_pscontactdel is not None:
-                proj = m_pscontactdel.group("proj")
+                proj = self.casefold(m_pscontactdel.group("proj"))
                 gc   = self.casefold(m_pscontactdel.group("gc"))
 
                 # remove GC from project
@@ -321,7 +321,8 @@ class Server(BaseServer):
                     await self._log(f"removing invex for no-longer-GC {gc}")
 
             elif m_psprojectdrop is not None:
-                proj = m_psprojectdrop.group("proj")
+                proj = self.casefold(m_psprojectdrop.group("proj"))
+
                 # get all GCs for project
                 for gc in self.projects.pop(proj, []):
                     # remove project from GC
