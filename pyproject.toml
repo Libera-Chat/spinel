@@ -1,0 +1,15 @@
+[project]
+name = "spinel"
+version = "0.1"
+description = "IRC bot to manage #libera-communities invite list"
+requires-python = ">=3.11"
+scripts.spinel = "spinel.main:main"
+dependencies = [
+  "ircchallenge ~=0.1.2",
+  "ircrobots    ~=0.5.0",
+  "pyyaml       ~=6.0.1",
+]
+
+[build-system]
+requires = ["setuptools", "wheel"]
+build-backend = "setuptools.build_meta"
